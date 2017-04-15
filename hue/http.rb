@@ -39,7 +39,6 @@ module Hue
       http_init unless @http && @http.started?
       req = method.new(path)
       req['Accept'] = "application/json"
-      req['Authorization'] = "Basic #{Base64.strict_encode64(@secret)}"
       req.content_type = "application/json"
       puts("Body: #{body}") if $VERBOSE
       http_resp = @http.request(req, JSON.generate(body))

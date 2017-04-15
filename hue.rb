@@ -49,7 +49,7 @@ bridge_name = ::Hue::Auth.new(secret: $USERNAME).check_auth
 puts("Successfully authenticated to bridge: #{bridge_name}")
 
 STATES = [ 'on', 'sat', 'hue', 'bri', 'effect' ]
-COMMANDS = [ 'turn', 'color', 'setstate', 'getstate', 'randomize' ]
+COMMANDS = [ 'turn', 'setstate', 'getstate', 'randomize' ]
 
 def set_state(light, state, value)
   if STATES.include?(state) && light =~ /[0-9]/
@@ -64,7 +64,8 @@ end
 
 def run_command(light, command, params)
   command = command.downcase
-  puts("Running command #{command} with params: #{params}")
+  puts("Running command #{command}")
+  print(" with params: #{params}") unless params.empty?
   if command == 'turn'
     if ['on', 'off'].include?(params[0])
       value = params[0] == 'on' ? true : false
@@ -96,6 +97,7 @@ def run_command(light, command, params)
       bri: rand(30..254),
       sat: rand(30..254)
     }
+    puts("Brightness: #{states[:bri]} | Hue: #{states[:hue]} | Saturation: #{states[:sat]}")
     puts(::Hue::Lights.new(secret: $USERNAME).set_states_by_lnum(light, states))
   end
 end
