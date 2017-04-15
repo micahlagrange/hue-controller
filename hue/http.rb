@@ -2,7 +2,7 @@
 require 'json'
 require 'base64'
 require 'net/http'
-# $VERBOSE = true
+$VERBOSE = true if ENV['VERBOSE'] == 'true'
 
 module Hue
   module Api

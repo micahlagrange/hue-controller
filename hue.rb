@@ -12,6 +12,8 @@ class ArgumentError < StandardError; end
 # Checking for credentials
 $USERNAME = ""
 $WAIT_TIME = 1
+$AUTHENTICATED_OBJECT = nil
+
 creds_path = "#{Dir.home}/.hue.creds"
 if File.file?(creds_path)
 	creds = JSON.parse(File.open(creds_path).read)
@@ -46,26 +48,38 @@ end
 
 # Check that we're connected and have an authenticated user
 bridge_name = ::Hue::Auth.new(secret: $USERNAME).check_auth
-puts("Successfully authenticated to bridge: #{bridge_name}")
+puts("Successfully authenticated to bridge: #{bridge_name}") if $VERBOSE
 
 STATES = [ 'on', 'sat', 'hue', 'bri', 'effect' ]
-COMMANDS = [ 'turn', 'setstate', 'getstate', 'randomize' ]
+COMMANDS = [ 'turn', 'setstate', 'getstate', 'randomize', 'percent' ]
+
+def hue_obj
+  if $AUTHENTICATED_OBJECT.nil?
+    $AUTHENTICATED_OBJECT = ::Hue::Lights.new(secret: $USERNAME)
+  end
+  return $AUTHENTICATED_OBJECT
+end
 
 def set_state(light, state, value)
   if STATES.include?(state) && light =~ /[0-9]/
-    puts("Setting light number #{light} state #{state} to #{value}")
+    puts("Setting light #{light} #{state} to #{value}")
     value = true if value == 'true'
     value = false if value == 'false'
     value = value.to_i if value =~ /[0-9]/
-    status = ::Hue::Lights.new(secret: $USERNAME).set_state_by_lnum(light, state, value)
+    status = hue_obj.set_state_by_lnum(light, state, value)
     puts(status)
   end
 end
 
+def set_percentage(light, state, percent)
+  puts("Setting light #{light} #{state} to #{percent}%")
+  status = hue_obj.percent_of_max_by_lnum(light, {state => percent})
+end
+
 def run_command(light, command, params)
   command = command.downcase
-  puts("Running command #{command}")
-  print(" with params: #{params}") unless params.empty?
+  print("light: #{light} command: #{command}") if $VERBOSE
+  print(" params: #{params}\n") unless params.empty? if $VERBOSE
   if command == 'turn'
     if ['on', 'off'].include?(params[0])
       value = params[0] == 'on' ? true : false
@@ -84,10 +98,20 @@ def run_command(light, command, params)
     end
   end
 
+  if command == 'percent'
+    hue_state = params[0]
+    percent = params[1]
+    if STATES.include?(hue_state)
+      set_percentage(light, hue_state, percent)
+    else
+      abort("Could not set percentage of invalid parameter #{hue_state}")
+    end
+  end
+
   # Try to get a specific attribute
   if command == 'getstate'
     hue_state = params[0]
-    puts(::Hue::Lights.new(secret: $USERNAME).get_states_by_lnum(light)['state'][hue_state])
+    puts(hue_obj.get_states_by_lnum(light)['state'][hue_state])
   end
 
   # Set random values for color, saturation, brightness
@@ -98,19 +122,55 @@ def run_command(light, command, params)
       sat: rand(30..254)
     }
     puts("Brightness: #{states[:bri]} | Hue: #{states[:hue]} | Saturation: #{states[:sat]}")
-    puts(::Hue::Lights.new(secret: $USERNAME).set_states_by_lnum(light, states))
+    puts(hue_obj.set_states_by_lnum(light, states))
   end
 end
 
 if ARGV[0]
-  light=ARGV[0]
-end
-if ARGV[1]
-  if COMMANDS.include?(ARGV[1])
-    command = ARGV[1]
-    run_command(light, command, ARGV[2..-1])
+  if ARGV[0] == 'all_on'
+    hue_obj.all_on
+    exit
+  elsif ARGV[0] == 'all_off'
+    hue_obj.all_off
+    exit
+  elsif ARGV[0] == 'all'
+    if ARGV[1] == 'dim'
+      hue_obj.all_dim
+    elsif ARGV[1] == 'off'
+      hue_obj.all_off
+    elsif ARGV[1] == 'on'
+      hue_obj.all_on
+    elsif ARGV[1] == 'bright'
+      hue_obj.all_bright
+    else
+      groups = [0]
+    end
+  elsif ARGV[0] =~ /[0-9]/
+    lights = [ARGV[0].to_i]
+  else
+    groups = hue_obj.room_ids(ARGV[0].downcase)
   end
-else
-  light_info = ::Hue::Lights.new(secret: $USERNAME).get_states_by_lnum(light)
-  puts("Light name: #{light_info['name']} | on? #{light_info['state']['on']}\nAll info:#{light_info}")
+end
+
+if lights
+  puts("Selected lights: #{lights}")
+  lights.each do |light|
+    if ARGV[1]
+      if COMMANDS.include?(ARGV[1])
+        command = ARGV[1]
+        run_command(light, command, ARGV[2..-1])
+      end
+    else
+      light_info = hue_obj.get_states_by_lnum(light)
+      puts("Light: #{light} name: #{light_info['name']} | on? #{light_info['state']['on']}\nAll info:#{light_info}")
+    end
+  end
+end
+
+if groups
+  puts("Selected groups: #{groups}")
+  groups.each do |grp|
+    group_info = hue_obj.get_states_by_group(grp)
+    puts("Group: #{grp} | name: #{group_info['name']} | All info: #{group_info}")
+  end
 end
