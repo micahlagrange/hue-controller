@@ -1,7 +1,8 @@
 #!/usr/bin/env ruby
 # Hue Controller script. Pass arguments to get info or control a hue bridge.
 
-ENV['RUBYLIB'] = '.:..'
+ENV['RUBYLIB'] = '.:..:./hue'
+$VERBOSE = true if ENV['VERBOSE'] == 'true'
 
 require 'json'
 require 'hue/lights'
@@ -61,13 +62,16 @@ def hue_obj
 end
 
 def set_state(light, state, value)
-  if STATES.include?(state) && light =~ /[0-9]/
+  puts "light:#{light} state to set:#{state}, state value:#{value}" if $VERBOSE
+  if STATES.include?(state) && light.to_s =~ /[0-9]/
     puts("Setting light #{light} #{state} to #{value}")
     value = true if value == 'true'
     value = false if value == 'false'
     value = value.to_i if value =~ /[0-9]/
     status = hue_obj.set_state_by_lnum(light, state, value)
     puts(status)
+	else
+    puts("Not doing it. STATES=#{STATES}\nRegex eval? #{light =~ /[0-9]/}")
   end
 end
 
@@ -159,6 +163,10 @@ if lights
       if COMMANDS.include?(ARGV[1])
         command = ARGV[1]
         run_command(light, command, ARGV[2..-1])
+				puts hue_obj.get_states_by_lnum(light) if $VERBOSE
+      else
+        puts "Invalid command #{ARGV[1]}"
+        exit 1
       end
     else
       light_info = hue_obj.get_states_by_lnum(light)

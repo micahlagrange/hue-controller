@@ -19,6 +19,12 @@ module Hue
       @http.start
     end
 
+    def check_response
+      if @resp.any? { |r| r.class == Hash && r.has_key?('error') }
+        raise HueApiError.new("Errors receieved from hue api: #{@resp.map {|r| r['error']['description']}}")
+      end
+    end
+
     def api_get(path)
       http_init unless @http && @http.started?
       req = Net::HTTP::Get.new(path)
@@ -29,6 +35,7 @@ module Hue
         @resp = JSON.parse(http_resp.body)
         @status = http_resp.code
         puts("Code: #{@status} | Path: #{path} | Response: #{@resp}") if $VERBOSE
+        check_response
       else
         raise HueApiError.new("Could not poll api. Error: #{http_resp.body}")
       end
@@ -46,6 +53,7 @@ module Hue
         @resp = JSON.parse(http_resp.body)
         @status = http_resp.code
         puts("Code: #{@status} | Path: #{path} | Response: #{@resp}") if $VERBOSE
+        check_response
       else
         raise HueApiError.new("Could not poll api. Error: #{http_resp.body}")
       end
