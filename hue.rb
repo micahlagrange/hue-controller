@@ -149,6 +149,7 @@ if ARGV[0]
     hue_obj.all_off
     exit
   elsif ARGV[0] == 'all'
+    # Group methods
     if ARGV[1] == 'dim'
       hue_obj.all_dim
     elsif ARGV[1] == 'off'
@@ -162,6 +163,10 @@ if ARGV[0]
         new_sat = ARGV[2].to_i
       end
       hue_obj.set_states_by_group(0, sat: new_sat)
+    elsif ARGV[1] == 'loop'
+      hue_obj.set_states_by_group(0, effect: 'colorloop')
+    elsif ['clear', 'none', 'stop', 'null', 'nil', 'regular', 'normal'].include?(ARGV[1])
+      hue_obj.set_states_by_group(0, effect: 'none')
     elsif begin
         clr = ::Hue.color(ARGV[1])
       rescue ::Hue::ColorNotFoundError
