@@ -59,7 +59,7 @@ bridge_name = ::Hue::Auth.new(secret: $USERNAME).check_auth
 puts("Successfully authenticated to bridge: #{bridge_name}") if $VERBOSE
 
 STATES = [ 'on', 'sat', 'hue', 'bri', 'effect' ]
-COMMANDS = [ 'color', 'turn', 'setstate', 'getstate', 'randomize', 'percent' ]
+COMMANDS = [ 'color', 'turn', 'setstate', 'set', 'getstate', 'randomize', 'percent' ]
 
 def hue_obj
   if $AUTHENTICATED_OBJECT.nil?
@@ -103,7 +103,7 @@ def run_command(light, command, params)
   end
 
   # Try to set a manual attribute at your own risk
-  if command == 'setstate'
+  if command == 'setstate' || command == 'set'
     hue_state = params[0]
     value = params[1]
     if STATES.include?(hue_state)
@@ -158,22 +158,6 @@ if ARGV[0]
       hue_obj.all_on
     elsif ARGV[1] == 'bright'
       hue_obj.all_bright
-    elsif ARGV[1] == 'sat'
-      if ARGV[2]
-        new_sat = ARGV[2].to_i
-      end
-      hue_obj.set_states_by_group(0, sat: new_sat)
-    elsif ARGV[1] == 'loop'
-      hue_obj.set_states_by_group(0, effect: 'colorloop')
-    elsif ['clear', 'none', 'stop', 'null', 'nil', 'regular', 'normal'].include?(ARGV[1])
-      hue_obj.set_states_by_group(0, effect: 'none')
-    elsif begin
-        clr = ::Hue.color(ARGV[1])
-      rescue ::Hue::ColorNotFoundError
-        puts("Did not match any colors with #{ARGV[1]}") if $VERBOSE
-        false
-      end
-      hue_obj.group_color(0, ARGV[1])
     else
       groups = [0]
     end
@@ -192,6 +176,10 @@ if lights
         command = ARGV[1]
         run_command(light, command, ARGV[2..-1])
 				puts hue_obj.get_states_by_lnum(light) if $VERBOSE
+      elsif ARGV[1] == 'loop'
+        hue_obj.set_states_by_lnum(light, effect: 'colorloop')
+      elsif ['clear', 'none', 'stop', 'null', 'nil', 'regular', 'normal'].include?(ARGV[1])
+        hue_obj.set_states_by_lnum(light, effect: 'none')
       else
         puts "Invalid command #{ARGV[1]}"
         exit 1
@@ -206,7 +194,26 @@ end
 if groups
   puts("Selected groups: #{groups}")
   groups.each do |grp|
-    group_info = hue_obj.get_states_by_group(grp)
-    puts("Group: #{grp} | name: #{group_info['name']} | All info: #{group_info}")
+    if ARGV[1] == 'sat'
+      if ARGV[2]
+        new_sat = ARGV[2].to_i
+      end
+      hue_obj.set_states_by_group(grp, sat: new_sat)
+    elsif ARGV[1] == 'loop'
+      hue_obj.set_states_by_group(grp, effect: 'colorloop')
+    elsif ['clear', 'none', 'stop', 'null', 'nil', 'regular', 'normal'].include?(ARGV[1])
+      hue_obj.set_states_by_group(grp, effect: 'none')
+    elsif begin
+        clr = ::Hue.color(ARGV[1])
+      rescue ::Hue::ColorNotFoundError
+        puts("Did not match any colors with #{ARGV[1]}") if $VERBOSE
+        false
+      end
+      puts("Turning group #{grp} #{ARGV[1]}")
+      hue_obj.group_color(grp, ARGV[1])
+    else
+      group_info = hue_obj.get_states_by_group(grp)
+      puts("Group: #{grp} | name: #{group_info['name']} | All info: #{group_info}")
+    end
   end
 end
