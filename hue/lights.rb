@@ -4,12 +4,30 @@ require 'json'
 require 'hue/http'
 
 module Hue
-  class Colors
-    RED = 0
-    YELLOW = 12750
-    GREEN = 25500
-    BLUE = 46920
-    PINK = 56100
+  RED = 0
+  YELLOW = 12750
+  GREEN = 25500
+  BLUE = 46920
+  PINK = 56100
+
+  class ColorNotFoundError < StandardError; end
+
+  def self.color(name)
+    dname = name.downcase
+    return case dname
+    when 'red'
+      then ::Hue::RED
+    when 'yellow'
+      then ::Hue::YELLOW
+    when 'green'
+      then ::Hue::GREEN
+    when 'blue'
+      then ::Hue::BLUE
+    when 'pink'
+      then ::Hue::pink
+    else
+      raise ColorNotFoundError.new("No color '#{dname}'")
+    end
   end
 
   class Lights

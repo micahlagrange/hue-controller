@@ -19,7 +19,8 @@ creds_path = "#{Dir.home}/.hue.creds"
 config_path = "#{Dir.home}/.hue.config"
 if File.file?(config_path)
   config = JSON.parse(File.open(config_path).read)
-  ::Hue::Api.default_host = config['default']['hostname']
+  ::Hue::Api.hostname = config['default']['hostname']
+  ::Hue::Api.port = config['default']['port']
 end
 
 if File.file?(creds_path)
@@ -58,7 +59,7 @@ bridge_name = ::Hue::Auth.new(secret: $USERNAME).check_auth
 puts("Successfully authenticated to bridge: #{bridge_name}") if $VERBOSE
 
 STATES = [ 'on', 'sat', 'hue', 'bri', 'effect' ]
-COMMANDS = [ 'turn', 'setstate', 'getstate', 'randomize', 'percent' ]
+COMMANDS = [ 'color', 'turn', 'setstate', 'getstate', 'randomize', 'percent' ]
 
 def hue_obj
   if $AUTHENTICATED_OBJECT.nil?
@@ -95,6 +96,10 @@ def run_command(light, command, params)
       value = params[0] == 'on' ? true : false
       set_state(light, 'on', value)
     end
+  end
+
+  if command == 'color'
+    set_state(light, 'hue', ::Hue.color(params[0]))
   end
 
   # Try to set a manual attribute at your own risk
