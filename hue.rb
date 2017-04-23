@@ -157,7 +157,17 @@ if ARGV[0]
       hue_obj.all_on
     elsif ARGV[1] == 'bright'
       hue_obj.all_bright
-    elsif clr = ::Hue.color(ARGV[1])
+    elsif ARGV[1] == 'sat'
+      if ARGV[2]
+        new_sat = ARGV[2].to_i
+      end
+      hue_obj.set_states_by_group(0, sat: new_sat)
+    elsif begin
+        clr = ::Hue.color(ARGV[1])
+      rescue ::Hue::ColorNotFoundError
+        puts("Did not match any colors with #{ARGV[1]}") if $VERBOSE
+        false
+      end
       hue_obj.group_color(0, ARGV[1])
     else
       groups = [0]
