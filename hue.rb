@@ -16,6 +16,12 @@ $WAIT_TIME = 1
 $AUTHENTICATED_OBJECT = nil
 
 creds_path = "#{Dir.home}/.hue.creds"
+config_path = "#{Dir.home}/.hue.config"
+if File.file?(config_path)
+  config = JSON.parse(File.open(config_path).read)
+  ::Hue::Api.default_host = config['default']['hostname']
+end
+
 if File.file?(creds_path)
 	creds = JSON.parse(File.open(creds_path).read)
 	# Set username for later api use

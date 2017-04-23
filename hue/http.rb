@@ -11,6 +11,18 @@ module Hue
 
     API_HOST = 'hue.local'
     API_PORT = 80
+
+    def self.default_host
+      # To use a different host, in your code do:
+      # ::Hue::Api.default_host = 'other.hostname'
+      @default_host || API_HOST
+    end
+
+    def self.default_host=(value)
+      @default_host = value
+      puts("Setting default host to #{value}") if $VERBOSE
+    end
+
     class HueApiError < StandardError; end
 
     attr_accessor :resp, :status
