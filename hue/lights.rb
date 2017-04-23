@@ -84,6 +84,14 @@ module Hue
       @resp
     end
 
+    def group_color(group_id, name)
+      if hue_color = ::Hue.color(name)
+        set_states_by_group(group_id, hue: hue_color)
+      else
+        raise StandardError.new("This is awkward.")
+      end
+    end
+
     def all_off
       # Turn off group 0 (all lights)
       set_states_by_group(0, on: false)

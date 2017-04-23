@@ -157,6 +157,8 @@ if ARGV[0]
       hue_obj.all_on
     elsif ARGV[1] == 'bright'
       hue_obj.all_bright
+    elsif clr = ::Hue.color(ARGV[1])
+      hue_obj.group_color(0, ARGV[1])
     else
       groups = [0]
     end
