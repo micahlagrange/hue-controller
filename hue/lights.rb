@@ -105,7 +105,7 @@ module Hue
 
     def group_color(group_id, name)
       if hue_color = ::Hue.color(name)
-        set_states_by_group(group_id, hue: hue_color)
+        set_states_by_group(group_id, ::Hue::Lights::HUE => hue_color)
       else
         raise StandardError.new("This is awkward.")
       end
@@ -123,14 +123,14 @@ module Hue
 
     def all_bright
       # Make all lights on and 100% BRIGHTNESS
-      states = {bri: 254, sat: 40, hue: 8402}
+      states = {::Hue::Lights::BRIGHTNESS => 254, ::Hue::Lights::SATURATION => 40, ::Hue::Lights::HUE => 8402}
       states['on'] = true
       set_states_by_group(0, states)
     end
 
     def all_dim
       # Make all lights on and 100% BRIGHTNESS
-      states = percent_of_max(bri: 50, sat: 20, hue: 50)
+      states = percent_of_max(::Hue::Lights::BRIGHTNESS => 50, ::Hue::Lights::SATURATION => 20, ::Hue::Lights::HUE => 50)
       states['on'] = true
       set_states_by_group(0, states)
     end

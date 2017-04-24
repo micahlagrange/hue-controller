@@ -141,10 +141,8 @@ end
 if ARGV[0]
   if ARGV[0] == 'all_on'
     hue_obj.all_on
-    exit
   elsif ARGV[0] == 'all_off'
     hue_obj.all_off
-    exit
   elsif ARGV[0] == 'all'
     # Group methods
     if ARGV[1] == 'dim'
