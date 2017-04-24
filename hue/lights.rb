@@ -7,7 +7,12 @@ module Hue
   RED = 0
   YELLOW = 12750
   GREEN = 25500
+  MAGENTA = 40604
   BLUE = 46920
+  DARKRED = 47104
+  PURPLE = 53311
+  AQUAMARINE = 35903
+  ORANGE = 53311
   PINK = 56100
 
   class ColorNotFoundError < StandardError; end
@@ -17,6 +22,12 @@ module Hue
     return case dname
     when 'red'
       then ::Hue::RED
+    when 'darkred'
+      then ::Hue::DARKRED
+    when 'dark red'
+      then ::Hue::DARKRED
+    when 'orange'
+      then ::Hue::ORANGE
     when 'yellow'
       then ::Hue::YELLOW
     when 'green'
@@ -24,7 +35,15 @@ module Hue
     when 'blue'
       then ::Hue::BLUE
     when 'pink'
-      then ::Hue::pink
+      then ::Hue::PINK
+    when 'aqua'
+      then ::Hue::AQUAMARINE
+    when 'aquamarine'
+      then ::Hue::AQUAMARINE
+    when 'purple'
+      then ::Hue::PURPLE
+    when 'magenta'
+      then ::Hue::MAGENTA
     else
       raise ColorNotFoundError.new("No color '#{dname}'")
     end

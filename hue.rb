@@ -62,10 +62,7 @@ STATES = [ 'on', 'sat', 'hue', 'bri', 'effect' ]
 COMMANDS = [ 'color', 'turn', 'setstate', 'set', 'getstate', 'randomize', 'percent' ]
 
 def hue_obj
-  if $AUTHENTICATED_OBJECT.nil?
-    $AUTHENTICATED_OBJECT = ::Hue::Lights.new(secret: $USERNAME)
-  end
-  return $AUTHENTICATED_OBJECT
+  $AUTHENTICATED_OBJECT || ::Hue::Lights.new(secret: $USERNAME)
 end
 
 def set_state(light, state, value)
@@ -194,26 +191,32 @@ end
 if groups
   puts("Selected groups: #{groups}")
   groups.each do |grp|
-    if ARGV[1] == 'sat'
+    if ARGV[1].nil?
+      # No parameters passed, just want info
+      group_info = hue_obj.get_states_by_group(grp)
+      puts("Group: #{grp} | name: #{group_info['name']} | All info: #{group_info}")
+    elsif ARGV[1] == 'sat'
+      # Saturation
       if ARGV[2]
         new_sat = ARGV[2].to_i
       end
       hue_obj.set_states_by_group(grp, sat: new_sat)
     elsif ARGV[1] == 'loop'
+      # Effect: colorloop
       hue_obj.set_states_by_group(grp, effect: 'colorloop')
     elsif ['clear', 'none', 'stop', 'null', 'nil', 'regular', 'normal'].include?(ARGV[1])
+      # Effect: none
       hue_obj.set_states_by_group(grp, effect: 'none')
-    elsif begin
+    elsif
+      # See if parameter matches a color name. If so, just set the group to that color
+      begin
         clr = ::Hue.color(ARGV[1])
       rescue ::Hue::ColorNotFoundError
         puts("Did not match any colors with #{ARGV[1]}") if $VERBOSE
         false
       end
-      puts("Turning group #{grp} #{ARGV[1]}")
-      hue_obj.group_color(grp, ARGV[1])
-    else
-      group_info = hue_obj.get_states_by_group(grp)
-      puts("Group: #{grp} | name: #{group_info['name']} | All info: #{group_info}")
+        puts("Turning group #{grp} #{ARGV[1]}")
+        hue_obj.group_color(grp, ARGV[1])
     end
   end
 end
