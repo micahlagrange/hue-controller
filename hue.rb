@@ -160,7 +160,7 @@ if ARGV[0]
     end
   elsif ARGV[0] =~ /[0-9]/
     lights = [ARGV[0].to_i]
-  elsif ARGV[0] = 'profile'
+  elsif ARGV[0] == 'profile'
     if ARGV[1]
       profile_path = "#{profiles_dir}/#{ARGV[1]}"
       abort("Could not load profile #{profile_path}") unless File.file?(profile_path)
