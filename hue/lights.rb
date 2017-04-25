@@ -21,29 +21,29 @@ module Hue
     dname = name.downcase
     return case dname
     when 'red'
-      then ::Hue::RED
+      then RED
     when 'darkred'
-      then ::Hue::DARKRED
+      then DARKRED
     when 'dark red'
-      then ::Hue::DARKRED
+      then DARKRED
     when 'orange'
-      then ::Hue::ORANGE
+      then ORANGE
     when 'yellow'
-      then ::Hue::YELLOW
+      then YELLOW
     when 'green'
-      then ::Hue::GREEN
+      then GREEN
     when 'blue'
-      then ::Hue::BLUE
+      then BLUE
     when 'pink'
-      then ::Hue::PINK
+      then PINK
     when 'aqua'
-      then ::Hue::AQUAMARINE
+      then AQUAMARINE
     when 'aquamarine'
-      then ::Hue::AQUAMARINE
+      then AQUAMARINE
     when 'purple'
-      then ::Hue::PURPLE
+      then PURPLE
     when 'magenta'
-      then ::Hue::MAGENTA
+      then MAGENTA
     else
       raise ColorNotFoundError.new("No color '#{dname}'")
     end
@@ -105,7 +105,7 @@ module Hue
 
     def group_color(group_id, name)
       if hue_color = ::Hue.color(name)
-        set_states_by_group(group_id, ::Hue::Lights::HUE => hue_color)
+        set_states_by_group(group_id, HUE => hue_color)
       else
         raise StandardError.new("This is awkward.")
       end
@@ -123,16 +123,24 @@ module Hue
 
     def all_bright
       # Make all lights on and 100% BRIGHTNESS
-      states = {::Hue::Lights::BRIGHTNESS => 254, ::Hue::Lights::SATURATION => 40, ::Hue::Lights::HUE => 8402}
+      states = {BRIGHTNESS => 254, SATURATION => 40, HUE => 8402}
       states['on'] = true
       set_states_by_group(0, states)
     end
 
     def all_dim
       # Make all lights on and 100% BRIGHTNESS
-      states = percent_of_max(::Hue::Lights::BRIGHTNESS => 50, ::Hue::Lights::SATURATION => 20, ::Hue::Lights::HUE => 50)
+      states = percent_of_max(BRIGHTNESS => 50, SATURATION => 20, HUE => 50)
       states['on'] = true
       set_states_by_group(0, states)
+    end
+
+    def get_lnum_by_id(uniqueid)
+      lights.each do |k,v|
+        if v['uniqueid'] == uniqueid
+          return k
+        end
+      end
     end
 
     def set_state_by_lnum(light_number, state, value)
@@ -141,6 +149,10 @@ module Hue
 
     def set_states_by_lnum(light_number, states)
       api_post("/api/#{@secret}/lights/#{light_number}/state", states, method: ::Hue::Api::Method_PUT)
+    end
+
+    def set_states_by_id(uniqueid, states)
+      set_states_by_lnum(get_lnum_by_id(uniqueid), states)
     end
 
     def set_states_by_group(group, states)
@@ -155,12 +167,12 @@ module Hue
       converted_doc = {}
       doc.keys.each do |k|
         puts("Converting #{k}")
-        if k.to_s == ::Hue::Lights::BRIGHTNESS
-          max = ::Hue::Lights::MAX_BRIGHTNESS.to_f
-        elsif k.to_s == ::Hue::Lights::SATURATION
-          max = ::Hue::Lights::MAX_SATURATION.to_f
-        elsif k.to_s == ::Hue::Lights::HUE
-          max = ::Hue::Lights::MAX_HUE.to_f
+        if k.to_s == BRIGHTNESS
+          max = MAX_BRIGHTNESS.to_f
+        elsif k.to_s == SATURATION
+          max = MAX_SATURATION.to_f
+        elsif k.to_s == HUE
+          max = MAX_HUE.to_f
         else
           raise ::Hue::Api::HueApiError.new("Tried to get a percentage without a maximum number for value #{k}")
         end
@@ -168,6 +180,26 @@ module Hue
         converted_doc[k] = (doc[k].to_f / 100 * max).to_i
       end
       return converted_doc
+    end
+
+    def profile
+      prof = {}
+      lights.each do |k,v|
+        prof[v['uniqueid']] = {
+          'on' => v['state']['on'],
+          BRIGHTNESS => v['state']['bri'],
+          SATURATION => v['state']['sat'],
+          HUE => v['state']['hue'],
+          'effect' => v['state']['effect']
+        }
+      end
+      prof
+    end
+
+    def set_profile(prof)
+      prof.each do |uniqueid,state|
+        set_states_by_id(uniqueid,state)
+      end
     end
   end
 end

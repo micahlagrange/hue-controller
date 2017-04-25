@@ -17,6 +17,8 @@ $AUTHENTICATED_OBJECT = nil
 
 creds_path = "#{Dir.home}/.hue.creds"
 config_path = "#{Dir.home}/.hue.config"
+profiles_dir = "#{Dir.home}/.hue.profiles"
+
 if File.file?(config_path)
   config = JSON.parse(File.open(config_path).read)
   ::Hue::Api.hostname = config['default']['hostname']
@@ -158,6 +160,15 @@ if ARGV[0]
     end
   elsif ARGV[0] =~ /[0-9]/
     lights = [ARGV[0].to_i]
+  elsif ARGV[0] = 'profile'
+    if ARGV[1]
+      profile_path = "#{profiles_dir}/#{ARGV[1]}"
+      abort("Could not load profile #{profile_path}") unless File.file?(profile_path)
+      hue_obj.set_profile(JSON.parse(open(profile_path).read))
+    else
+      puts(JSON.generate(hue_obj.profile))
+      exit 0
+    end
   else
     groups = hue_obj.room_ids(ARGV[0].downcase)
   end
